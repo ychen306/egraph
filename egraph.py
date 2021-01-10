@@ -180,8 +180,11 @@ assoc = Rewrite(
     add(a, add(b, c)),
     add(add(a, b), c),
     {'a': 'a', 'b': 'b', 'c':'c'})
+comm = Rewrite(
+    add(a, b), add(b, a), {'a': 'a', 'b': 'b'})
 for _ in range(10):
   apply_rewrite(eg, assoc)
+  apply_rewrite(eg, comm)
   eg.rebuild()
 from pprint import pprint
 pprint(eg.ids)
