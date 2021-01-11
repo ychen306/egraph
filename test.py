@@ -72,4 +72,7 @@ def run_tests(tests):
   print(f'Passed: {num_passed}/{len(tests)}')
   
 run_tests([
-  test1, test_assoc, test_assoc_and_comm])
+  test1, 
+  test_assoc,
+  test_assoc2,
+  test_assoc_and_comm])
