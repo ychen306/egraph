@@ -58,9 +58,18 @@ def test_assoc_and_comm():
   assert not egraph.equal(e1, e2)
   saturate(egraph, get_rewrites())
   assert egraph.equal(e1, e2)
-  
 
-test1()
-test_assoc()
-test_assoc2()
-test_assoc_and_comm()
+def run_tests(tests):
+  num_passed = 0
+  for test in tests:
+    print(f'Running {test.__name__}')
+    try:
+      test()
+      num_passed += 1
+      print(f'\tpassed')
+    except:
+      print(f'\tfailed')
+  print(f'Passed: {num_passed}/{len(tests)}')
+  
+run_tests([
+  test1, test_assoc, test_assoc_and_comm])
