@@ -57,7 +57,6 @@ def test_assoc_and_comm():
   e2 = add(d, add(add(a, b), c))
   assert not egraph.equal(e1, e2)
   saturate(egraph, get_rewrites())
-  print(egraph.size())
   assert egraph.equal(e1, e2)
 
 def run_tests(tests):

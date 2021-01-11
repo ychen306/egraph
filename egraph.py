@@ -173,12 +173,6 @@ class EGraph:
       for subst in self.match_node(n, pat):
         yield i, subst
 
-def apply_rewrite(egraph, rw):
-  substs = list(egraph.match(rw.lhs))
-  for i, subst in substs:
-    j = rw.apply(egraph, subst)
-    egraph.merge(i, j)
-
 def saturate(egraph, rewrites, max_iters=1000):
   for i in range(max_iters):
     size = egraph.size()
