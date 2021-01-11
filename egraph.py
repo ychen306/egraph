@@ -28,6 +28,7 @@ class Pattern:
       x = self.get_live_in()
       if x in subst:
         return egraph.get_id(subst[x])
+      assert False
       return egraph.make(x)
     operands = [p.apply(egraph, subst) for p in self.sub_patterns]
     return egraph.make(self.op, *operands)
@@ -62,13 +63,17 @@ def merge_substs(substs):
 
 class EGraph:
   def __init__(self):
+    self.counter = 0
     # node -> ids
     self.ids = {}
     # equivalence class over ids
     self.ec = DisjointSet()
-    # mapping ids/values (not nodes) -> their users
+    # mapping ids/values (not nodes) -> [(user, class id of user)]
     self.users = defaultdict(set)
     self.worklist = set()
+
+  def size(self):
+    return len(self.ids)
 
   def canonicalize(self, n):
     return ENode(n.op, tuple(self.ec.find(i) for i in n.operands))
@@ -80,10 +85,11 @@ class EGraph:
     n = self.canonicalize(n)
     if n in self.ids:
       return self.ids[n]
-    i = len(self.ids)
+    i = self.counter
+    self.counter += 1
     self.ids[n] = i
     for j in n.operands:
-      self.users[self.ec.find(j)].add(n)
+      self.users[self.ec.find(j)].add((n, self.ec.find(i)))
     return i
 
   def get_id(self, n):
@@ -111,20 +117,18 @@ class EGraph:
         self.repair(i)
 
   def repair(self, i):
-    new_ids = {}
-    for n in self.users[i]:
-      j = self.get_id(n)
-      new_ids[self.canonicalize(n)] = j
+    for n, j in self.users[i]:
+      if n in self.ids:
+        del self.ids[n]
+      self.ids[self.canonicalize(n)] = self.ec.find(j)
 
-    users = set()
-    for n in self.users[i]:
-      i = self.get_id(n)
+    new_users = {}
+    for n, j in self.users[i]:
       n = self.canonicalize(n)
-      if n in users:
-        self.merge(i, self.get_id(n))
-      users.add(n)
-    self.users[i] = users
-    self.ids.update(new_ids)
+      if n in new_users:
+        self.merge(j, new_users[n])
+      new_users[n] = self.ec.find(j)
+    self.users[i] = set(new_users.items())
 
   def equal(self, i, j):
     return self.ec.connected(i, j)
@@ -161,35 +165,40 @@ def apply_rewrite(egraph, rw):
     j = rw.apply(egraph, subst)
     egraph.merge(i, j)
 
-def add(a, b):
-  return Pattern('add', a, b)
+def saturate(egraph, rewrites, max_iters=1000):
+  for i in range(max_iters):
+    size = egraph.size()
+    for rw in rewrites:
+      apply_rewrite(egraph, rw)
+    egraph.rebuild()
+    if size == egraph.size():
+      return i
 
-eg = EGraph()
-a = eg.make('a')
-b = eg.make('b')
-c = eg.make('c')
-d = eg.make('d')
-eg.make('add', a, 
-    eg.make('add', b,
-      eg.make('add', c, d)))
-
-a = Pattern('a')
-b = Pattern('b')
-c = Pattern('c')
-assoc = Rewrite(
-    add(a, add(b, c)),
-    add(add(a, b), c),
-    {'a': 'a', 'b': 'b', 'c':'c'})
-comm = Rewrite(
-    add(a, b), add(b, a), {'a': 'a', 'b': 'b'})
-for _ in range(10):
-  apply_rewrite(eg, assoc)
-  apply_rewrite(eg, comm)
-  eg.rebuild()
-from pprint import pprint
-pprint(eg.ids)
-pprint(list(eg.ec))
-
+#def add(a, b):
+#  return Pattern('add', a, b)
+#
+#eg = EGraph()
+#a = eg.make('a')
+#b = eg.make('b')
+#c = eg.make('c')
+#d = eg.make('d')
+#eg.make('add', a, 
+#    eg.make('add', b,
+#      eg.make('add', c, d)))
+#
+#a = Pattern('a')
+#b = Pattern('b')
+#c = Pattern('c')
+#assoc = Rewrite(
+#    add(a, add(b, c)),
+#    add(add(a, b), c),
+#    {'a': 'a', 'b': 'b', 'c':'c'})
+#comm = Rewrite(
+#    add(a, b), add(b, a), {'a': 'a', 'b': 'b'})
+#
+#iters = saturate(eg, [assoc, comm])
+#print('Number of nodes:', len(eg.ids), 'iters:', iters)
+#
 #x = eg.make('x')
 #y = eg.make('y')
 #a1 = eg.make('add', x, x)
