@@ -28,7 +28,7 @@ class Pattern:
       x = self.get_live_in()
       if x in subst:
         return egraph.get_id(subst[x])
-      assert False
+      # x must be a constant
       return egraph.make(x)
     operands = [p.apply(egraph, subst) for p in self.sub_patterns]
     return egraph.make(self.op, *operands)
