@@ -49,6 +49,18 @@ def test_assoc2():
   saturate(egraph, get_rewrites())
   assert egraph.equal(e1, e2)
 
+def test_assoc_and_comm():
+  egraph = EGraph()
+  a, b, c, d = make_vars(egraph, 'a b c d')
+  add = lambda a, b: egraph.make('add', a, b)
+  e1 = add(a, add(b, add(c, d)))
+  e2 = add(d, add(add(a, b), c))
+  assert not egraph.equal(e1, e2)
+  saturate(egraph, get_rewrites())
+  assert egraph.equal(e1, e2)
+  
+
 test1()
 test_assoc()
 test_assoc2()
+test_assoc_and_comm()
