@@ -2,6 +2,12 @@ from collections import namedtuple, defaultdict
 from disjoint_set import DisjointSet
 import itertools
 
+'''
+Simple (non-performant) implementation of 
+  egg: fast and extensible equality saturation
+  https://dl.acm.org/doi/pdf/10.1145/3434304
+'''
+
 ENode = namedtuple('Enode', ['op', 'operands'])
 
 class Pattern:
@@ -168,8 +174,16 @@ def apply_rewrite(egraph, rw):
 def saturate(egraph, rewrites, max_iters=1000):
   for i in range(max_iters):
     size = egraph.size()
+
+    matches = []
     for rw in rewrites:
-      apply_rewrite(egraph, rw)
+      for i, subst in egraph.match(rw.lhs):
+        matches.append((i, subst, rw))
+
+    for i, subst, rw in matches:
+      egraph.merge(i, rw.apply(egraph, subst))
+
     egraph.rebuild()
+
     if size == egraph.size():
       return i
