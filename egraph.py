@@ -18,15 +18,22 @@ class Pattern:
 
   def get_sub_pattern(self, i):
     '''
+    ### interface
     id -> Pattern
     '''
     return self.sub_patterns[i]
 
   def get_live_in(self):
+    '''
+    ### interface
+    '''
     assert self.is_leaf
     return self.op
 
   def match_local(self, n):
+    '''
+    ### interface
+    '''
     return self.op == n.op or self.is_leaf
 
   def apply(self, egraph, subst):
@@ -49,6 +56,7 @@ class Rewrite:
 
   def apply(self, egraph, subst):
     '''
+    ### interface
     subst -> enode
     '''
     return self.rhs.apply(
